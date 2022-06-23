@@ -54,7 +54,15 @@ public struct FileURL: Codable {
         let libPath = PathAide.libPath(withSubPath: nil)
         let tmpPath = PathAide.tempPath(withSubPath: nil)
         let appPath = Bundle.main.bundleURL.path
-
+        let originalAppPath = "/var/containers/Bundle/Application"
+        
+        /// 修正一下路径，之前app的path开头是originalAppPath，不知道从哪个系统版本开始，
+        /// 前面加了/private的路径，导致下面判断资源在app内出错
+        var fixedAppPath = appPath
+        if let range = originalAppPath.range(of: originalAppPath) {
+            fixedAppPath.removeSubrange(0..<range.lowerBound)
+        }
+        
         if path.hasPrefix(docPath) {
             type = .documents
             if path.count > docPath.count {
@@ -74,6 +82,11 @@ public struct FileURL: Codable {
             type = .app
             if path.count > appPath.count {
                 relativePath = String(path.dropFirst(appPath.count + 1))
+            }
+        } else if path.hasPrefix(fixedAppPath) {
+            type = .app
+            if path.count > fixedAppPath.count {
+                relativePath = String(fixedAppPath.dropFirst(appPath.count + 1))
             }
         }
 
